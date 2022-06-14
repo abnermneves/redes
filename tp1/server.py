@@ -2,7 +2,7 @@ import socket as skt
 
 HOST = '127.0.0.1'
 PORT = 51511
-BUFSZ = 1024
+BUFSZ = 512 # tamanho da mensagem a receber do cliente
 
 # skt.AF_INET é para IPv4. ver como faz para aceitar também IPv6
 with skt.socket(skt.AF_INET, skt.SOCK_STREAM) as s:
@@ -20,4 +20,6 @@ with skt.socket(skt.AF_INET, skt.SOCK_STREAM) as s:
       data = conn.recv(BUFSZ)
       if not data:
         break
-      conn.sendall(data)
+      conn.sendall(data + b' passadah')
+
+print(f'fechou')
