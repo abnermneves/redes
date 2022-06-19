@@ -99,23 +99,18 @@ equipamentos = {
 }
 
 def main():
-  # if IPv == 'v4':
-  #   s = skt.socket(skt.AF_INET, skt.SOCK_STREAM)
-  # else:
-  #   s = skt.socket(skt.AF_INET6, skt.SOCK_STREAM)
-  # ------------- conexão do socket ------------- #
   with skt.socket(skt.AF_INET if IPv == 'v4' else skt.AF_INET6, skt.SOCK_STREAM) as s:
-    pdb.run('')
-    s.bind(('', PORT)) # associa o socket com todos os endereços e a porta
-    # s.bind((skt.))
-    s.listen() # espera a conexão de algum cliente
+    # associa o socket com todos os endereços disponíveis
+    # e espera a conexão de algum cliente
+    s.bind(('', PORT))
+    s.listen()
 
     # aceita uma conexão e retorna um objeto de conexão e um endereço
     # conn é um objeto socket distinto do listening socket
     conn, addr = s.accept()
 
     with conn:
-      print(f'Connected by {addr}')
+      print(f'Conectado em {addr}')
     
       while True:
         data = conn.recv(BUFSZ)
@@ -123,28 +118,29 @@ def main():
           break
 
         msg = data.decode()
+        print(msg, end='')
         response = ''
 
-        if re.fullmatch('add sensor (\d+ )+in \d+', msg):
+        if re.fullmatch('add sensor (\d+ )+in \d+\n', msg):
           ids = re.findall('\d+', msg)
           ids = [int(id) for id in ids]
           idEquipamento = ids[-1]
           sensores = ids[:-1]
           response = adicionar_sensores(sensores, idEquipamento)
 
-        elif re.fullmatch('remove sensor \d+ in \d+', msg):
+        elif re.fullmatch('remove sensor \d+ in \d+\n', msg):
           ids = re.findall('\d+', msg)
           ids = [int(id) for id in ids]
           idEquipamento = ids[-1]
           sensor = ids[0]
           response = remover_sensor(sensor, idEquipamento)
 
-        elif re.fullmatch('list sensors in \d+', msg):
+        elif re.fullmatch('list sensors in \d+\n', msg):
           ids = re.findall('\d+', msg)
           idEquipamento = int(ids[0])
           response = consultar_equipamento(idEquipamento)
 
-        elif re.fullmatch('read (\d+ )+in \d+', msg):
+        elif re.fullmatch('read (\d+ )+in \d+\n', msg):
           ids = re.findall('\d+', msg)
           ids = [int(id) for id in ids]
           idEquipamento = ids[-1]
@@ -152,12 +148,12 @@ def main():
           response = consultar_variaveis(sensores, idEquipamento)
 
         else:
-          conn.sendall(str.encode('invalid command'))
+          conn.sendall(str.encode('invalid command\n'))
           conn.close()
           break
 
         print(equipamentos)
-        conn.sendall(str.encode(response))
+        conn.sendall(str.encode(response + '\n'))
 
 if __name__ == '__main__':
   main()
