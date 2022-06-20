@@ -1,0 +1,39 @@
+Primeiro trabalho prático de Redes
+2022/1 - DCC/UFMG
+
+Ábner de Marcos Neves
+
+1. Introdução
+A fim de montar uma aplicação para monitoramento de equipamentos, foi implementado um sistema no modelo cliente-servidor com comunicação por socket. Nesse sistema, a central de monitoramento (cliente) pode instalar sensores em equipamentos, removê-los, listá-los e consultar suas medições. A estação remota (servidor) fica responsável por atender a essas solicitações, gerenciando em mais baixo nível os sensores e equipamentos.
+
+2. Implementação
+O algoritmo foi desenvolvido em Python 3.10.4, utilizando a biblioteca socket e outras básicas auxiliares (random, sys e re). Tanto conexões por IPv4 como por IPv6 são aceitas, e as duas partes do sistema - cliente e servidor - comunicam-se através do protocolo TCP.
+2.1. A central de monitoramento (cliente)
+O cliente é o lado mais simples do sistema, consistindo, basicamente, em um loop que lê mensagens do terminal e as envia ao servidor. Sua execução recebe como parâmetros o endereço IP ao qual deseja-se conectar e a porta.
+	Através do endereço informado, verifica-se sua versão (IPv4 ou IPv6) com as funções inet_pton() e inet_aton(), que convertem strings de endereços IP para binário. A primeira recebe, além do endereço, o parâmetro AF_INET6 e, se for possível efetuar a conversão, então o endereço é IPv6. Lógica análoga é aplicada à verificação para IPv4. Se nenhuma das verificações for bem sucedida, o cliente não faz a conexão.
+2.2. A estação remota (servidor)
+O servidor mantém um dicionário com pares do tipo { id do equipamento : lista de sensores } e o manipula de acordo com as solicitações do cliente. A execução do servidor recebe como parâmetros a versão de IP desejada e a porta. A partir disso, um objeto socket é criado com a versão de IP apropriada e associado a todos os endereços disponíveis em suas interfaces. Em Python, esse tipo de bind é feito com um parâmetro de string vazia, em vez da constante inaddr_any.
+	Ao aceitar uma conexão com um cliente, o servidor passa a esperar mensagens dele e as processa quando recebe: tenta casar a mensagem recebida com alguma das expressões regulares descritivas dos comandos disponíveis. Da mesma forma, extrai os IDs dos sensores e equipamento especificados na mensagem.
+	Após identificar o comando enviado pelo cliente, o servidor chama a função correspondente: adicionar_sensores(), remover_sensor(), consultar_equipamento() ou consultar_variaveis(). Caso nenhum comando válido tenha sido identificado, o servidor envia ao cliente uma mensagem ‘invalid command’, fazendo com que o cliente termine a execução e a conexão seja encerrada.
+	Todas as quatro funções listadas no parágrafo anterior retornam uma string como resposta ao servidor, detalhando um eventual erro que tenha acontecido ou indicando sucesso na execução. Essa resposta é, então, enviada como mensagem ao cliente. Para atender à especificação, todas as mensagens trocadas são sempre acrescidas de um ‘\n’ no final.
+3. Problemas e soluções
+Os maiores problemas encontrados durante o desenvolvimento desse sistema foram causados por imprecisões na especificação que deixavam espaço para desencontros entre a implementação e a correção automática. Não houve muita clareza em relação à precedência e granularidade das ações do servidor: se há dois erros em um comando, qual deve ser acusado? Se apenas um dos sensores informados é inválido, a ação ainda deve ser executada para os outros?
+	Para resolver esses problemas, decidi que as ações seriam todas atômicas: ou são executadas por completo, se tudo estiver correto, ou não são executadas, se houver algum problema mesmo que parcial. Dessa forma, se o cliente solicitar a inserção de 4 novos sensores, por exemplo, mas só couberem 3, nenhum novo sensor será adicionado.
+	A precedência de verificações foi feita de acordo com o que parecia mais natural: se foi solicitada a inserção de sensores inválidos em um equipamento inválido, o erro retornado é relativo ao equipamento. Entretanto, pode ser que haja uma divergência nisso com a correção automática. Essas duas verificações de validade são sempre realizadas antes de quaisquer outras.
+	Apesar das ações serem atômicas, as mensagens de erro são granulares: se, na adição de novos sensores, por exemplo, há algum já instalado, apenas esse será acusado na resposta do servidor, não obstante nenhum ser adicionado.
+4. Execução
+A execução do servidor e do cliente devem ser feitas em diferentes terminais com python da seguinte forma:
+
+em um terminal:       python server.py [versão] [porta]
+em outro terminal:    python client.py [ip] [porta]
+
+Em que [versão] corresponde a v4 ou v6, [porta] corresponde ao número da porta desejada e [ip] corresponde ao IP em que se deseja conectar.
+
+5. Conclusão
+Salvos alguns cuidados necessários, a lógica para manipulação dos sensores foi relativamente simples. A dificuldade do trabalho encontrava-se na conexão entre cliente e servidor com objetos socket. Entretanto, essa barreira pôde ser transpassada com pesquisas acerca do assunto, que me proveram melhor entendimento do fluxo de conexão e dos métodos e parâmetros utilizados ao longo do processo.
+	Foi um desafio extra encontrar correspondência em Python para os elementos de socket em C, o que contribuiu não apenas para um entendimento mais profundo de sockets, como também da própria linguagem, tornando-se, portanto, um desafio perfeitamente transponível.
+
+6. Referências
+Python Software Foundation. “socket — Low-level networking interface”, https://docs.python.org/3/library/socket.html. Acesso em junho de 2022.
+Jennings, Nathan. “Socket Programming in Python (Guide)”, https://realpython.com/python-sockets/. Acesso em junho de 2022.
+

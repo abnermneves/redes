@@ -9,7 +9,7 @@ import re
 def unpack_int(lista):
   return ' '.join([f'{el:0>2}' for el in lista]) if lista else ''
 
-# converte para string lista de números com duas casas decimais
+# converte lista de números para string com duas casas decimais
 def unpack_float(lista):
   return ' '.join([f'{el:.2f}' for el in lista]) if lista else ''
 
