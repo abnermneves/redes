@@ -37,6 +37,18 @@ def unpack_req_rem(msg):
 
   return int(id)
 
+def unpack_req_inf(msg):
+  # id source e id target
+  ids = re.findall('\d+', msg)[1:3]
+  return [int(id) for id in ids]
+
+def unpack_res_inf(msg):
+  # retorna id_source, id_target e info
+  numbers = msg.split(' ')
+  values = [int(n) for n in numbers[1:3]]
+  values.append(float(numbers[3]))
+  return values
+
 def remove_equipment(id):
   # se o equipamento não existe, retorna erro
   if id not in equipments:
@@ -47,6 +59,35 @@ def remove_equipment(id):
 
   return f'{OK} {success[1]}'
 
+def request_information(msg):
+  id_source, id_target = unpack_req_inf(msg)
+
+  if id_source not in equipments:
+    print('Equipment {id_source} not found')
+    response = f'{ERROR} {errors[2]}'    
+    return response, id_source
+
+  if id_target not in equipments:
+    print(f'Equipment {id_target} not found')
+    response = f'{ERROR} {errors[3]}'
+    return response, id_source
+
+  return msg, id_target
+
+def respond_information(msg):
+  id_source, id_target, _ = unpack_res_inf(msg)
+
+  if id_source not in equipments:
+    print('Equipment {id_source} not found')
+    response = f'{ERROR} {errors[2]}'    
+    return response, id_source
+
+  if id_target not in equipments:
+    print(f'Equipment {id_target} not found')
+    response = f'{ERROR} {errors[3]}'
+    return response, id_target
+
+  return msg, id_target 
 
 def get_id_msg(msg):
   # retorna o id contido no início da mensagem
@@ -86,8 +127,6 @@ def client_handler(connection):
   connection.sendall(str.encode(res_list))
 
   while True:
-    print(f'equipamentos: {list(equipments.keys())}')
-    
     request = connection.recv(BUFSZ).decode('utf-8')
     id_msg = get_id_msg(request)
 
@@ -99,6 +138,14 @@ def client_handler(connection):
       print(f'Equipment {idEq} removed')
       broadcast(f'{REQ_REM} {idEq}')
       break
+
+    elif id_msg == REQ_INF:
+      response, send_to = request_information(request)
+      equipments[send_to].sendall(str.encode(response))
+
+    elif id_msg == RES_INF:
+      response, send_to = respond_information(request)
+      equipments[send_to].sendall(str.encode(response))
 
 
     reply = 'resposta: ' + request
@@ -129,11 +176,7 @@ def main():
       client, address = s.accept()
       print('Conectado a: ' + address[0] + ' : ' + str(address[1]))
       start_new_thread(client_handler, (client, ))
-      # pdb.set_trace()
       thread_count += 1
-      # print('thread number: ' + str(thread_count))
-      # pdb.set_trace()
-      print(f'equipamentos: {list(equipments.keys())}')
 
 if __name__ == '__main__':
   main()

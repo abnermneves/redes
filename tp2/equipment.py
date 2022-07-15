@@ -3,6 +3,7 @@ from _thread import *
 from struct import unpack
 import sys
 import re
+import random
 import pdb
 
 ADDR = sys.argv[1]
@@ -34,6 +35,19 @@ def unpack_res_list(msg):
   ids = re.findall('\d+', msg)
   ids = [int(id) for id in ids[1:]]
   return ids
+
+def unpack_req_inf(msg):
+  # id source e id target
+  ids = re.findall('\d+', msg)[1:3]
+  return [int(id) for id in ids]
+  
+def unpack_res_inf(msg):
+  # retorna id_source, id_target e info
+  numbers = msg.split(' ')
+  values = [int(n) for n in numbers[1:3]]
+  values.append(float(numbers[3]))
+
+  return values
 
 def unpack_error(error):
   stripped_error = re.sub(f'^\d+ ', '', error)
@@ -67,7 +81,11 @@ def input_handler(s, idEq):
     elif msg == 'list equipment':
       list_eq = get_eq_list()
       print(list_eq)
-    
+
+    elif re.fullmatch('request information from \d+', msg):
+      id = re.findall('\d+', msg)[0]
+      msg = f'{REQ_INF} {idEq} {id}'
+      
     s.sendall(str.encode(msg))
 
 def main():
@@ -91,7 +109,7 @@ def main():
       return
 
     elif id_msg != RES_ADD:
-      print('id msg diferente de res add')
+      print('outra mensagem recebida antes da confirmação de conexão RES_ADD')
 
     idEq = unpack_res_add(response)
 
@@ -118,8 +136,18 @@ def main():
       elif id_msg == RES_LIST:
         equipments = unpack_res_list(response)
         # pdb.set_trace()
+
+      elif id_msg == REQ_INF:
+        print('requested information')
+        info = random.randint(0, 1000) / 100
+        id_source, id_target = unpack_req_inf(response)
+        requested_info = f'{RES_INF} {id_target} {id_source} {info}'
+        s.sendall(str.encode(requested_info))
+
       elif id_msg == RES_INF:
-        pass
+        id_source, id_target, payload = unpack_res_inf(response)
+        print(f'Value from {id_source}: {payload}')
+
       elif id_msg == ERROR:
         error = unpack_error(response)
         print(error)
@@ -128,9 +156,6 @@ def main():
         ok = unpack_ok(response)
         print(ok)
         break
-
-      print(f'equipamentos: {equipments}')
-
 
 if __name__ == '__main__':
   main()
