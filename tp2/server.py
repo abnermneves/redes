@@ -7,6 +7,15 @@ PORT = int(sys.argv[1])
 BUFSZ = 512 # tamanho da mensagem a receber do cliente
 MAX_EQ = 15
 
+REQ_ADD = 1
+REQ_REM = 2
+RES_ADD = 3
+RES_LIST = 4
+REQ_INF = 5
+RES_INF = 6
+ERROR = 7
+OK = 8
+
 errors =  {
   1 : 'Equipment not found',
   2 : 'Source equipment not found',
@@ -17,14 +26,20 @@ errors =  {
 eq_count = 0
 equipments = {}
 
+def get_eq_list():
+  return ' '.join([str(id) for id in equipments])
+
 def broadcast(msg):
   for eq in equipments.values():
-    eq.sendall(str.encode(msg))
+    try:
+      eq.sendall(str.encode(msg))
+    except skt.error as e:
+      print(e)
 
 def client_handler(connection):
   global eq_count, errors, equipments, PORT, BUFSZ, MAX_EQ
   if eq_count >= MAX_EQ:
-    connection.sendall(str.encode(errors[4]))
+    connection.sendall(str.encode(f'{ERROR} {errors[4]}'))
     connection.close()
     return
 
@@ -35,13 +50,11 @@ def client_handler(connection):
   print(f'Equipment {idEq} added')
 
   # envia RES_ADD com id do equipamento
-  msg = str.encode(str(idEq))
-  # connection.sendto(msg, ('255.255.255.255', PORT))
-  # connection.sendall(str.encode(str(idEq)))
-  broadcast(f'RES_ADD: {idEq}')
+  broadcast(f'{RES_ADD} {idEq}')
 
-  # broadcast com novo id
-  # to do
+  # envia lista de equipamentos já conectados
+  res_list = f'{RES_LIST} {get_eq_list()}'
+  connection.sendall(str.encode(res_list))
 
   while True:
     data = connection.recv(BUFSZ)
