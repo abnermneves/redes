@@ -146,7 +146,7 @@ def client_handler(connection):
     return
 
   # obtém lista de equipamento antes de adicionar o novo, para enviar a ele
-  eq_list = get_eq_list
+  eq_list = get_eq_list()
 
   # define identificador e registra equipamento na base de dados
   eq_count += 1
