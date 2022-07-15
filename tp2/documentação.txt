@@ -1,0 +1,64 @@
+Segundo trabalho prático de Redes
+2022/1
+
+Ábner de Marcos Neves
+
+1. Introdução
+A modernização da indústria é um caminho inevitável, e parte dele consiste em tornar seus equipamentos inteligentes e interconectados. Isso possibilita maior dinamicidade em processos industriais, maior precisão e menor demanda de mão de obra.
+
+Como proposta de solução, temos a implementação de uma rede de topologia cliente-servidor, com um único servidor e múltiplos clientes. Essa rede proporcionará uma comunicação centralizada entre todos os equipamentos e o servidor.
+
+2. Arquitetura
+A arquitetura da rede consiste em um único servidor e múltiplos clientes. O servidor fica responsável por gerenciar todos os equipamentos, isto é, os clientes, bem como interceptar a comunicação entre eles. Os equipamentos ficam responsáveis apenas pelo seu próprio gerenciamento na rede, podendo eventualmente fazer solicitações de comunicação com outros equipamentos.
+
+A comunicação é toda feita por mensagens padronizadas, que consistem em strings da forma:
+
+[ID do tipo de mensagem] [conteúdo]
+
+Esse formato foi definido a fim de facilitar a extração das informações transmitidas, exigindo apenas que seja removido o numeral do início da mensagem, relativo ao ID de tipo de mensagem, e capturado o conteúdo restante, para posterior tratamento adequado.
+
+3. Servidor
+O servidor implementado consiste em um socket responsável por escutar novas conexões e uma lista de vários outros sockets, cada um para uma conexão com um cliente diferente. Por isso, torna-se necessária a utilização de programação com multithreads, que permite a manipulação paralela de sockets diferentes, criando-se uma nova thread para cada conexão estabelecida.
+
+Cada uma dessas threads executa a função client_handler(), responsável pela inclusão e remoção de equipamentos na rede, atribuição de identificadores, recebimento de mensagens dos clientes e todas as ações que as mensagens desencadeiam.
+
+A identificação das mensagens recebidas é feita pela comparação do ID contido em seu início com constantes definidas de acordo com a especificação. Depois de identificado o tipo, são extraídas das mensagens as informações pertinentes para seu processamento, como, por exemplo, ID de origem, ID de destino etc. Essa extração é feita com funções auxiliares que reconhecem as informações através de expressões regulares ou lógicas simples, todas nomeadas na forma unpack_tipo_da_mensagem().
+
+Com as informações necessárias em mãos, a ação solicitada é realizada, como, por exemplo, remover um equipamento ou solicitar uma informação, sempre seguindo as condições e os processos definidos na especificação. Vale destacar aqui a forma em que é feita  uma transmissão em broadcast: itera-se sobre a lista de equipamentos conectados na rede e, por cada socket correspondente, é enviada a mensagem desejada para cada equipamento.
+
+4. Equipamento
+Diferentemente do primeiro trabalho prático, neste, a implementação do cliente mostrou-se tão complexa quanto a do servidor. Processos parecidos aos explicados anteriormente são realizados: a solicitação de conexão ao servidor, a identificação do tipo de mensagem pelo seu ID e o desencadeamento da ação necessária de acordo com a mensagem.
+
+Depois da confirmação de conexão, torna-se necessária também a criação de uma nova thread no equipamento. Aqui, fica uma thread responsável por ouvir mensagens oriundas do servidor, e outra responsável por receber comandos da entrada padrão.
+
+Na primeira, uma mensagem recebida é identificada pelo seu ID, e as informações nela contidas são extraídas com funções unpack_tipo_de_mensagem(). A partir disso, são realizados processos como solicitar abertura ou fechamento de conexão, solicitar informação a um outro equipamento etc. A mensagem recebida do servidor também pode se tratar de um erro ou um OK, casos em que elas recebem o devido tratamento para escrever a mensagem na tela.
+
+5. Execução
+A execução do servidor e do cliente devem ser feitas em diferentes terminais com python da seguinte forma:
+
+em um terminal:       python server.py [porta]
+em outro terminal:    python equipment.py [ip] [porta]
+...
+em mais um terminal:  python equipment.py [ip] [porta]
+
+Em que [porta] corresponde ao número da porta desejada e [ip] corresponde ao IP em que se deseja conectar. Podem ser executados múltiplos equipamentos em terminais diferentes, mas o máximo de conexões ativas é 15, como definido pela especificação.
+
+6. Discussão e conclusão
+Definitivamente um pouco mais laborioso que o primeiro trabalho prático, mas também por isso, mais recompensador. A princípio, era meio obscura a questão de como manipular diversos clientes simultaneamente, mas quando essa etapa foi desbravada, tudo fluiu melhor. A programação em multithreads se mostrou um desafio por si só, além das questões próprias de redes, mas foi importante para colocar em prática conceitos vistos, inclusive, em outras matérias do curso, como a de sistemas paralelos e distribuídos.
+
+Houve um desenvolvimento parecido no momento de implementar multithreads no cliente, para ouvir simultaneamente tanto servidor quanto entrada padrão, e, novamente, desbravada essa parte, tudo fluiu sem maiores problemas.
+
+Uma diferença na implementação foi a escolha por não imprimir na tela absolutamente todas as mensagens recebidas pelos sockets. Essa decisão foi motivada pelo fato de, nos exemplos presentes na própria especificação, essas mensagens estarem ocultas: são exibidas apenas aquelas mais pertinentes, definidas claramente pela especificação. Além disso, ocultar as mensagens internas deixa a interface mais limpa, e, caso desejado imprimi-las, pode ser feito com um simples print(request) no servidor ou print(response) no equipamento.
+
+Apesar disso, a especificação foi de enorme valia, detalhando muito bem todos os processos esperados, suas respostas, possíveis erros e suas precedências. Foi constantemente consultada ao longo de todo o desenvolvimento do trabalho. Mesmo com uma lógica relativamente simples nos processos definidos, sua implementação exigia bastante atenção. Mas essa simplicidade proporcionou um bom equilíbrio no trabalho todo, deixando espaço para maior cuidado às questões de conexão, manipulação de sockets e multithreading, por exemplo, que são temas mais caros aos tópicos de redes.
+
+7. Referências
+HALL, Brian “Beej Jorgensen”. 2020. “Beej's Guide to Network Programming Using Internet Sockets”, https://beej.us/guide/bgnet/. Acesso em julho/2022
+
+JENNINGS, Nathan. 2022. “Socket Programming in Python (Guide)”, https://realpython.com/python-sockets/. Acesso em: julho/2022.
+
+Codezup. 2021. “Socket Server with Multiple Clients | Multithreading | Python”, https://codezup.com/socket-server-with-multiple-clients-model-multithreading-python/. Acesso em: julho/2022.
+
+Digamber. 2021. “How to Create Socket Server with Multiple Clients in Python”, https://www.positronx.io/create-socket-server-with-multiple-clients-in-python/. Acesso em: julho/2022.
+
+Deven. 2022. “Creating python socket server with multiple clients”, https://codesource.io/creating-python-socket-server-with-multiple-clients/. Acesso em: julho/2022.

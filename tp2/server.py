@@ -1,6 +1,5 @@
 from _thread import *
 import socket as skt
-import pdb
 import sys
 import re
 
@@ -188,11 +187,6 @@ def client_handler(connection):
     elif id_msg == RES_INF:
       response, send_to = respond_information(request)
       equipments[send_to].sendall(str.encode(response))
-
-    # if not request:
-    #   break
-    
-  # connection.close()
 
 # ----------------------------------- execução do programa ----------------------------------- #
 
