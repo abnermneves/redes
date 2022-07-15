@@ -136,7 +136,7 @@ def main():
 
     # extrai id gerado pelo servidor
     idEq = unpack_res_add(response)
-    print(f"New ID: {idEq}")
+    print(f"New ID: {idEq:0>2}")
       
     # cria nova thread para aguardar input do teclado
     start_new_thread(input_handler, (s, idEq))
@@ -150,13 +150,13 @@ def main():
       if id_msg == REQ_REM:
         id_rem = unpack_req_rem(response)
         equipments.remove(id_rem)
-        print(f'Equipment {id_rem} removed')
+        print(f'Equipment {id_rem:0>2} removed')
 
       # identifica mensagem do tipo RES_ADD e realiza ações
       elif id_msg == RES_ADD:
         idEq = unpack_res_add(response)
         equipments.append(idEq)
-        print(f'Equipment {idEq} added')
+        print(f'Equipment {idEq:0>2} added')
 
       # identifica mensagem do tipo RES_LIST e realiza ações
       elif id_msg == RES_LIST:
@@ -173,7 +173,7 @@ def main():
       # identifica mensagem do tipo RES_INF e realiza ações
       elif id_msg == RES_INF:
         id_source, id_target, payload = unpack_res_inf(response)
-        print(f'Value from {id_source}: {payload}')
+        print(f'Value from {id_source:0>2}: {payload:.2f}')
 
       # identifica erros e escreve a mensagem na tela
       elif id_msg == ERROR:

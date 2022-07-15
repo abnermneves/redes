@@ -80,13 +80,13 @@ def request_information(msg):
 
   # verificação de existência do equipamento de origem
   if id_source not in equipments:
-    print('Equipment {id_source} not found')
+    print(f'Equipment {id_source:0>2} not found')
     response = f'{ERROR} {errors[2]}'    
     return response, id_source
 
   # verificação de existência do equipamento de destino
   if id_target not in equipments:
-    print(f'Equipment {id_target} not found')
+    print(f'Equipment {id_target:0>2} not found')
     response = f'{ERROR} {errors[3]}'
     return response, id_source
 
@@ -99,13 +99,13 @@ def respond_information(msg):
 
   # verificação de existência do equipamento de origem
   if id_source not in equipments:
-    print('Equipment {id_source} not found')
+    print(f'Equipment {id_source:0>2} not found')
     response = f'{ERROR} {errors[2]}'    
     return response, id_source
 
   # verificação de existência do equipamento de destino
   if id_target not in equipments:
-    print(f'Equipment {id_target} not found')
+    print(f'Equipment {id_target:0>2} not found')
     response = f'{ERROR} {errors[3]}'
     return response, id_target
 
@@ -123,7 +123,7 @@ def get_id_msg(msg):
 
 # retorna a lista de equipamentos como uma string
 def get_eq_list():
-  return ' '.join([str(id) for id in equipments])
+  return ' '.join([f'{id:0>2}' for id in equipments])
 
 # realiza transmissão em broadcast
 def broadcast(msg):
@@ -131,7 +131,7 @@ def broadcast(msg):
     try:
       eq.sendall(str.encode(msg))
     except skt.error as e:
-      print(f'broadcast error to eq {id}: {e}')
+      print(f'broadcast error to eq {id:0>2}: {e}')
 
 # ---------------------------------- manipulação do cliente ---------------------------------- #
 
@@ -145,17 +145,20 @@ def client_handler(connection):
     connection.close()
     return
 
+  # obtém lista de equipamento antes de adicionar o novo, para enviar a ele
+  eq_list = get_eq_list
+
   # define identificador e registra equipamento na base de dados
   eq_count += 1
   idEq = eq_count
   equipments[idEq] = connection
-  print(f'Equipment {idEq} added')
+  print(f'Equipment {idEq:0>2} added')
 
   # broadcast de RES_ADD com id do novo equipamento
   broadcast(f'{RES_ADD} {idEq}')
 
   # envia lista de equipamentos já conectados para o novo equipamento
-  res_list = f'{RES_LIST} {get_eq_list()}'
+  res_list = f'{RES_LIST} {eq_list}'
   connection.sendall(str.encode(res_list))
 
   # escuta as mensagens do equipamento
@@ -171,7 +174,7 @@ def client_handler(connection):
       connection.sendall(str.encode(response))
       connection.close()
 
-      print(f'Equipment {idEq} removed')
+      print(f'Equipment {idEq:0>2} removed')
       broadcast(f'{REQ_REM} {idEq}')
 
       break
