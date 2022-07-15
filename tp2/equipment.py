@@ -51,6 +51,10 @@ def get_id_msg(msg):
 
   return id
 
+def get_eq_list():
+  # global equipments
+  return ' '.join([f'{id:0>2}' for id in equipments])
+
 # --------------------------------- execução do programa --------------------------------- #
 
 def input_handler(s, idEq):
@@ -60,9 +64,14 @@ def input_handler(s, idEq):
     if msg == 'close connection':
       msg = f'{REQ_REM} {idEq}'
     
+    elif msg == 'list equipment':
+      list_eq = get_eq_list()
+      print(list_eq)
+    
     s.sendall(str.encode(msg))
 
 def main():
+  global equipments
   # cria um socket com IPv4
   with skt.socket() as s:
     try:
