@@ -20,9 +20,13 @@ ERROR = 7
 OK = 8
 
 def unpack_res_add(msg):
-  stripped_msg = re.sub(f'^\d+ ', '', msg)
-  
-  id = re.findall('\d+', stripped_msg)[0]
+  id = re.findall('\d+', msg)[1]
+
+  return int(id)
+
+def unpack_req_rem(msg):
+  # segundo id da mensagem
+  id = re.findall('\d+', msg)[1]
 
   return int(id)
 
@@ -36,6 +40,11 @@ def unpack_error(error):
 
   return stripped_error
 
+def unpack_ok(ok):
+  stripped_ok = re.sub(f'^\d+ ', '', ok)
+
+  return stripped_ok
+
 def get_id_msg(msg):
   id = re.findall('^\d+', msg)
   id = int(id[0]) if id else ''
@@ -44,9 +53,13 @@ def get_id_msg(msg):
 
 # --------------------------------- execução do programa --------------------------------- #
 
-def input_handler(s):
+def input_handler(s, idEq):
   while True:
     msg = input()
+    
+    if msg == 'close connection':
+      msg = f'{REQ_REM} {idEq}'
+    
     s.sendall(str.encode(msg))
 
 def main():
@@ -70,14 +83,13 @@ def main():
 
     elif id_msg != RES_ADD:
       print('id msg diferente de res add')
-      pdb.set_trace()
 
     idEq = unpack_res_add(response)
 
     print(f"New ID: {idEq}")
       
     # thread para aguardar input do teclado
-    start_new_thread(input_handler, (s, ))
+    start_new_thread(input_handler, (s, idEq))
 
     # aguardando mensagens do servidor
     while True:
@@ -88,7 +100,12 @@ def main():
         idEq = unpack_res_add(response)
         equipments.append(idEq)
         print(f'Equipment {idEq} added')
-      
+
+      if id_msg == REQ_REM:
+        id_rem = unpack_req_rem(response)
+        equipments.remove(id_rem)
+        print(f'Equipment {id_rem} removed')
+
       elif id_msg == RES_LIST:
         equipments = unpack_res_list(response)
         # pdb.set_trace()
@@ -99,7 +116,9 @@ def main():
         print(error)
 
       elif id_msg == OK:
-        pass
+        ok = unpack_ok(response)
+        print(ok)
+        break
 
       print(f'equipamentos: {equipments}')
 
